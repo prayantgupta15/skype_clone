@@ -1,13 +1,18 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:provider/provider.dart';
 import 'package:skypeclone/pageviews/chat_list_screen.dart';
+import 'package:skypeclone/pickup/pickup_layout.dart';
+import 'package:skypeclone/provider/user_provider.dart';
 import 'package:skypeclone/resources/firebase_repo.dart';
 import 'package:skypeclone/utils/universal_variables.dart';
 
 class HomeScreen extends StatefulWidget {
   FirebaseUser user;
   HomeScreen(this.user);
+
   @override
   _HomeScreenState createState() => _HomeScreenState(user);
 }
@@ -17,10 +22,17 @@ class _HomeScreenState extends State<HomeScreen> {
   FirebaseUser user;
   PageController pageController;
   int _page = 0;
+  UserProvider userProvider;
+
   _HomeScreenState(this.user);
   @override
   void initState() {
     super.initState();
+
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      userProvider = Provider.of<UserProvider>(context, listen: false);
+      userProvider.refreshUser();
+    });
     pageController = PageController();
   }
 
@@ -37,70 +49,72 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Scaffold(
-        backgroundColor: UniversalVariables.blackColor,
-        body: PageView(
-          children: <Widget>[
-            ChatListScreen(),
-            Center(
-              child: Text("Call List"),
-            ),
-            Center(
-              child: Text("Contacts Screen"),
-            ),
-          ],
-          controller: pageController,
-          onPageChanged: onPageChanged,
-          physics: AlwaysScrollableScrollPhysics(),
-        ),
-        bottomNavigationBar: Container(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 10),
-            child: CupertinoTabBar(
-              backgroundColor: UniversalVariables.blackColor,
-              items: <BottomNavigationBarItem>[
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.chat,
-                        color: _page == 0
-                            ? UniversalVariables.lightBlueColor
-                            : UniversalVariables.greyColor),
-                    title: Text(
-                      "Chats",
-                      style: TextStyle(
-                          fontSize: 10,
+      child: PickupLayout(
+        scaffold: Scaffold(
+          backgroundColor: UniversalVariables.blackColor,
+          body: PageView(
+            children: <Widget>[
+              ChatListScreen(),
+              Center(
+                child: Text("Call List"),
+              ),
+              Center(
+                child: Text("Contacts Screen"),
+              ),
+            ],
+            controller: pageController,
+            onPageChanged: onPageChanged,
+            physics: AlwaysScrollableScrollPhysics(),
+          ),
+          bottomNavigationBar: Container(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: CupertinoTabBar(
+                backgroundColor: UniversalVariables.blackColor,
+                items: <BottomNavigationBarItem>[
+                  BottomNavigationBarItem(
+                      icon: Icon(Icons.chat,
                           color: _page == 0
                               ? UniversalVariables.lightBlueColor
                               : UniversalVariables.greyColor),
-                    )),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.call,
-                        color: _page == 1
-                            ? UniversalVariables.lightBlueColor
-                            : UniversalVariables.greyColor),
-                    title: Text(
-                      "Calls",
-                      style: TextStyle(
-                          fontSize: 10,
+                      title: Text(
+                        "Chats",
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: _page == 0
+                                ? UniversalVariables.lightBlueColor
+                                : UniversalVariables.greyColor),
+                      )),
+                  BottomNavigationBarItem(
+                      icon: Icon(Icons.call,
                           color: _page == 1
                               ? UniversalVariables.lightBlueColor
                               : UniversalVariables.greyColor),
-                    )),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.contact_mail,
-                        color: _page == 2
-                            ? UniversalVariables.lightBlueColor
-                            : UniversalVariables.greyColor),
-                    title: Text(
-                      "Contacts",
-                      style: TextStyle(
-                          fontSize: 10,
+                      title: Text(
+                        "Calls",
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: _page == 1
+                                ? UniversalVariables.lightBlueColor
+                                : UniversalVariables.greyColor),
+                      )),
+                  BottomNavigationBarItem(
+                      icon: Icon(Icons.contact_mail,
                           color: _page == 2
                               ? UniversalVariables.lightBlueColor
                               : UniversalVariables.greyColor),
-                    )),
-              ],
-              onTap: navigationTapped,
-              currentIndex: _page,
+                      title: Text(
+                        "Contacts",
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: _page == 2
+                                ? UniversalVariables.lightBlueColor
+                                : UniversalVariables.greyColor),
+                      )),
+                ],
+                onTap: navigationTapped,
+                currentIndex: _page,
+              ),
             ),
           ),
         ),

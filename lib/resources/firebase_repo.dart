@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:skypeclone/model/message.dart';
 import 'package:skypeclone/model/user.dart';
+import 'package:skypeclone/provider/image_upload_provider.dart';
 import 'package:skypeclone/resources/firebase_methods.dart';
 
 class FirebaseRepo {
@@ -27,9 +28,14 @@ class FirebaseRepo {
   Future<void> addMessageToDB(Message _message, User sender, User receiver) =>
       _firebaseMethods.addMessageToDB(_message, sender, receiver);
 
-  void uploadImage(
-          {@required File image,
-          @required String receiverId,
-          @required String senderId}) =>
-      _firebaseMethods.uploadImage(image, receiverId, senderId);
+  void uploadImage({
+    @required File image,
+    @required String receiverId,
+    @required String senderId,
+    @required ImageUploadProvider imageUploadProvider,
+  }) =>
+      _firebaseMethods.uploadImage(
+          image, receiverId, senderId, imageUploadProvider);
+
+  Future<User> getUserDetails() => _firebaseMethods.getUserDetails();
 }

@@ -8,6 +8,7 @@ import 'package:skypeclone/Screens/search_screen.dart';
 import 'package:skypeclone/model/vew_state.dart';
 import 'package:skypeclone/pageviews/chat_list_screen.dart';
 import 'package:skypeclone/provider/image_upload_provider.dart';
+import 'package:skypeclone/provider/user_provider.dart';
 import 'package:skypeclone/resources/firebase_repo.dart';
 
 void main() => runApp(MyApp());
@@ -21,8 +22,13 @@ class _MyAppState extends State<MyApp> {
   FirebaseRepo _repo = FirebaseRepo();
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<ImageUploadProvider>(
-      create: (context) => ImageUploadProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ImageUploadProvider()),
+        ChangeNotifierProvider(
+          create: (_) => UserProvider(),
+        ),
+      ],
       child: MaterialApp(
         title: "Skype Clone",
 

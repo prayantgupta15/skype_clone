@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:audioplayers/audio_cache.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:emoji_picker/emoji_picker.dart';
@@ -14,6 +13,9 @@ import 'package:skypeclone/model/vew_state.dart';
 import 'package:skypeclone/provider/image_upload_provider.dart';
 import 'package:skypeclone/resources/firebase_repo.dart';
 import 'package:skypeclone/utils/Utils.dart';
+import 'package:skypeclone/utils/cache-image.dart';
+import 'package:skypeclone/utils/call_utilities.dart';
+import 'package:skypeclone/utils/permissions.dart';
 import 'package:skypeclone/utils/universal_variables.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -46,7 +48,8 @@ class _ChatScreenState extends State<ChatScreen> {
     _repo.uploadImage(
         image: selectedImage,
         receiverId: widget.receiver.uid,
-        senderId: _currentUserId);
+        senderId: _currentUserId,
+        imageUploadProvider: _imageUploadProvider);
   }
 
   @override
@@ -84,8 +87,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     _imageUploadProvider = Provider.of<ImageUploadProvider>(context);
-
     return Scaffold(
+//      resizeToAvoidBottomPadding: false,
+      resizeToAvoidBottomInset: true,
       backgroundColor: UniversalVariables.blackColor,
       appBar: AppBar(
         title: Text(widget.receiver.name),
@@ -95,7 +99,11 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: Icon(
               Icons.video_call,
             ),
-            onPressed: () {},
+            onPressed: () async =>
+                await Permissions.cameraAndMicrophonePermissionsGranted()
+                    ? CallUtils.dial(
+                        from: sender, to: widget.receiver, context: context)
+                    : {},
           ),
           IconButton(
             icon: Icon(Icons.phone),
@@ -105,19 +113,15 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: <Widget>[
-          FlatButton(
-            child: Text("Change View State"),
-            onPressed: () {
-              _imageUploadProvider.getViewState == ViewState.LOADING
-                  ? _imageUploadProvider.setToIdle()
-                  : _imageUploadProvider.setToLoading();
-            },
-          ),
           Flexible(
             child: messageList(),
           ),
           _imageUploadProvider.getViewState == ViewState.LOADING
-              ? CircularProgressIndicator()
+              ? Container(
+                  margin: EdgeInsets.only(right: 25),
+                  alignment: Alignment.centerRight,
+                  child: CircularProgressIndicator(),
+                )
               : Container(),
           chatControl(),
           showEmojiPicker
@@ -196,6 +200,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget chatMessageItem(DocumentSnapshot snapshot) {
+    Message _message = Message.fromMap(snapshot.data);
     return Container(
       margin: EdgeInsets.symmetric(vertical: 5),
       child: Container(
@@ -204,13 +209,13 @@ class _ChatScreenState extends State<ChatScreen> {
             ? Alignment.centerRight
             : Alignment.centerLeft,
         child: snapshot["senderId"] == _currentUserId
-            ? senderLayout(snapshot)
-            : receiverLayout(snapshot),
+            ? senderLayout(_message)
+            : receiverLayout(_message),
       )),
     );
   }
 
-  Widget senderLayout(DocumentSnapshot snapshot) {
+  Widget senderLayout(Message snapshot) {
     Radius messageRadius = Radius.circular(10);
     return Container(
       margin: EdgeInsets.only(top: 12),
@@ -225,18 +230,29 @@ class _ChatScreenState extends State<ChatScreen> {
           bottomLeft: messageRadius,
         ),
       ),
-      child: Padding(padding: EdgeInsets.all(10), child: getMessage(snapshot)),
+      child: Padding(
+        padding:
+            snapshot.type == 'image' ? EdgeInsets.all(0) : EdgeInsets.all(10),
+        child: getMessage(snapshot),
+      ),
     );
   }
 
-  getMessage(DocumentSnapshot snapshot) {
-    return Text(
-      snapshot["message"],
-      style: TextStyle(color: Colors.white, fontSize: 16),
-    );
+  getMessage(Message snapshot) {
+    return snapshot.type != 'image'
+        ? Text(
+            snapshot.message,
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          )
+        : CachedImage(
+            snapshot.photoUrl,
+            height: 250,
+            width: 250,
+            radius: 10,
+          );
   }
 
-  Widget receiverLayout(DocumentSnapshot snapshot) {
+  Widget receiverLayout(Message snapshot) {
     Radius messageRadius = Radius.circular(10);
     return Container(
       margin: EdgeInsets.only(top: 12),
@@ -251,7 +267,10 @@ class _ChatScreenState extends State<ChatScreen> {
           bottomLeft: messageRadius,
         ),
       ),
-      child: Padding(padding: EdgeInsets.all(10), child: getMessage(snapshot)),
+      child: Padding(
+          padding:
+              snapshot.type == 'image' ? EdgeInsets.all(0) : EdgeInsets.all(10),
+          child: getMessage(snapshot)),
     );
   }
 
@@ -400,6 +419,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       title: Text("Media"),
                       leading: Icon(Icons.photo_size_select_actual),
                       subtitle: Text("Share Photos and Media"),
+                      onTap: () {
+                        pickImage(source: ImageSource.gallery);
+                      },
                     ),
                     ListTile(
                       title: Text("File"),

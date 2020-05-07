@@ -8,12 +8,13 @@ class Message {
   Timestamp timestamp;
   String photoUrl;
 
-  Message(
-      {this.senderId,
-      this.receiverId,
-      this.type,
-      this.message,
-      this.timestamp});
+  Message({
+    this.senderId,
+    this.receiverId,
+    this.type,
+    this.message,
+    this.timestamp,
+  });
   Message.imageMessage(
       {this.photoUrl,
       this.senderId,
@@ -43,13 +44,14 @@ class Message {
     return myMap;
   }
 
-  Message fromMap(Map<String, dynamic> myMap) {
-    Message _message = Message(
+  static Message fromMap(Map<String, dynamic> myMap) {
+    Message _message = Message.imageMessage(
         senderId: myMap['senderId'],
         receiverId: myMap['receiverId'],
         type: myMap['type'],
         message: myMap['message'],
-        timestamp: myMap['timestamp']);
+        timestamp: myMap['timestamp'],
+        photoUrl: myMap['photoUrl']);
     return _message;
   }
 }

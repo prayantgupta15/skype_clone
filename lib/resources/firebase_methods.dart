@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:skypeclone/model/message.dart';
 import 'package:skypeclone/model/user.dart';
+import 'package:skypeclone/provider/image_upload_provider.dart';
 import 'package:skypeclone/utils/Utils.dart';
 
 class FirebaseMethods {
@@ -18,6 +19,9 @@ class FirebaseMethods {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   StorageReference _storageReference;
+
+  static final CollectionReference _userCollection =
+      firestore.collection("users");
 
   Future<FirebaseUser> getCurrentUser() async {
     FirebaseUser currentUser = await _auth.currentUser();
@@ -144,8 +148,20 @@ class FirebaseMethods {
         .add(map);
   }
 
-  void uploadImage(File image, String reciverId, String senderId) async {
+  void uploadImage(File image, String reciverId, String senderId,
+      ImageUploadProvider imageUploadProvider) async {
+    imageUploadProvider.setToLoading();
     String url = await uploadImageToStorage(image);
+    imageUploadProvider.setToIdle();
     setImagemsg(url, reciverId, senderId);
+  }
+
+  Future<User> getUserDetails() async {
+    FirebaseUser currentUser = await getCurrentUser();
+
+    DocumentSnapshot documentSnapshot =
+        await _userCollection.document(currentUser.uid).get();
+
+    return User.fromMap(documentSnapshot.data);
   }
 }
